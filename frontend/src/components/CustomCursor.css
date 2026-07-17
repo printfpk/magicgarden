@@ -1,0 +1,14 @@
+/* Custom cursor sizes and positions are controlled by framer-motion in the JSX.
+   Only hide the default cursor here. */
+
+@media (hover: hover) and (pointer: fine) {
+  body,
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    cursor: none !important;
+  }
+}
+

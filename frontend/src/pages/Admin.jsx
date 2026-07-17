@@ -4,7 +4,7 @@ import axios from 'axios';
 import {
   LayoutDashboard, BookOpen, Library, Layers, LogOut,
   Plus, Pencil, Trash2, X, ChevronDown, Check, AlertCircle,
-  GraduationCap
+  GraduationCap, Menu
 } from 'lucide-react';
 
 // ─── Axios helper ────────────────────────────────────────────────────────────
@@ -773,6 +773,7 @@ export default function Admin() {
   const [loginError, setLoginError] = useState('');
   const [activePanel, setActivePanel] = useState('dashboard');
   const [toast, setToast] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type, id: Date.now() });
@@ -864,8 +865,13 @@ export default function Admin() {
 
   return (
     <div className="admin-layout">
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div className="admin-sidebar-overlay" onClick={() => setMobileMenuOpen(false)}></div>
+      )}
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="admin-sidebar-header">
           <p className="admin-sidebar-brand">Magic Study Garden</p>
           <p className="admin-sidebar-sub">Content Manager</p>
@@ -877,7 +883,7 @@ export default function Admin() {
             <button
               key={id}
               className={`sidebar-nav-item ${activePanel === id ? 'active' : ''}`}
-              onClick={() => setActivePanel(id)}
+              onClick={() => { setActivePanel(id); setMobileMenuOpen(false); }}
             >
               <Icon size={16} />
               {label}
@@ -896,10 +902,13 @@ export default function Admin() {
       {/* Main */}
       <main className="admin-main">
         <div className="admin-topbar">
-          <span className="admin-topbar-title">
+          <button className="admin-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <span className="admin-topbar-title" style={{ flex: 1, paddingLeft: '1rem' }}>
             {NAV_ITEMS.find(n => n.id === activePanel)?.label || 'Admin'}
           </span>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-faint)' }}>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-faint)' }} className="admin-user-status">
             Logged in as admin
           </span>
         </div>
