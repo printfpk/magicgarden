@@ -2787,3 +2787,36 @@
 
   .cursor-dot, .cursor-ring { display: none; }
 }
+
+/* Rich Text Rendering Styles */
+.rich-text-content {
+  color: inherit;
+  font-family: inherit;
+}
+.rich-text-content p {
+  margin-bottom: 0.75em;
+}
+.rich-text-content p:last-child {
+  margin-bottom: 0;
+}
+.rich-text-content ul, 
+.rich-text-content ol {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+.rich-text-content li {
+  margin-bottom: 0.25em;
+}
+.rich-text-content strong {
+  font-weight: 600;
+}
+.rich-text-content em {
+  font-style: italic;
+}
+.rich-text-content a {
+  color: var(--accent-gold, #D4AF37);
+  text-decoration: underline;
+}
+.rich-text-content a:hover {
+  text-decoration: none;
+}

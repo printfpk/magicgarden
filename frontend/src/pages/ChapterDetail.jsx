@@ -33,7 +33,7 @@ function QAItem({ qa, index }) {
             exit={{ height: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="qa-answer-inner">{qa.answer}</div>
+            <div className="qa-answer-inner rich-text-content" dangerouslySetInnerHTML={{ __html: qa.answer }} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -175,9 +175,9 @@ export default function ChapterDetail() {
               >
                 <div className="short-notes-list">
                   {chapter.shortNotes.map((note, i) => (
-                    <div key={i} className="short-note-item">
-                      <Dot size={20} className="note-bullet" />
-                      <span>{note}</span>
+                    <div key={i} className="short-note-item" style={{ alignItems: 'flex-start' }}>
+                      <Dot size={20} className="note-bullet" style={{ marginTop: '0.2rem' }} />
+                      <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: note }} style={{ flex: 1 }} />
                     </div>
                   ))}
                 </div>

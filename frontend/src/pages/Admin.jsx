@@ -1,11 +1,53 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import axios from 'axios';
 import {
   LayoutDashboard, BookOpen, Library, Layers, LogOut,
   Plus, Pencil, Trash2, X, ChevronDown, Check, AlertCircle,
-  GraduationCap, Menu
+  GraduationCap, Menu, FileText, HelpCircle
 } from 'lucide-react';
+
+const useQuillModules = (token, showToast) => {
+  return React.useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{'list': 'ordered'}, {'list': 'bullet'}],
+        ['link', 'image'],
+        ['clean']
+      ],
+      handlers: {
+        image: function() {
+          const input = document.createElement('input');
+          input.setAttribute('type', 'file');
+          input.setAttribute('accept', 'image/*');
+          input.click();
+
+          input.onchange = async () => {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            const range = this.quill.getSelection(true);
+            try {
+              showToast('Uploading image...', 'info');
+              const res = await api(token).post('/api/admin/upload-image', formData);
+              this.quill.insertEmbed(range.index, 'image', res.data.url);
+              showToast('Image uploaded!', 'success');
+            } catch (err) {
+              console.error(err);
+              showToast('Failed to upload image', 'error');
+            }
+          };
+        }
+      }
+    }
+  }), [token, showToast]);
+};
 
 // ─── Axios helper ────────────────────────────────────────────────────────────
 const api = (token) => axios.create({
@@ -690,6 +732,372 @@ function ChaptersPanel({ token, showToast }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  NOTES PANEL
+// ═══════════════════════════════════════════════════════════════════════════════
+function NotesPanel({ token, showToast }) {
+  const modules = useQuillModules(token, showToast);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [chapters, setChapters] = useState([]);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(null); // index of note being edited, or -1 for new
+  const [noteText, setNoteText] = useState('');
+
+  useEffect(() => {
+    api(token).get('/api/admin/classes').then(res => setClasses(res.data));
+  }, [token]);
+
+  useEffect(() => {
+    if (selectedClass) {
+      api(token).get(`/api/admin/subjects?classId=${selectedClass}`).then(res => setSubjects(res.data));
+    } else {
+      setSubjects([]);
+      setSelectedSubject('');
+      setSelectedChapter('');
+    }
+  }, [selectedClass, token]);
+
+  useEffect(() => {
+    if (selectedSubject) {
+      setLoading(true);
+      api(token).get(`/api/admin/chapters?subjectId=${selectedSubject}`)
+        .then(res => setChapters(res.data))
+        .finally(() => setLoading(false));
+    } else {
+      setChapters([]);
+      setSelectedChapter('');
+    }
+  }, [selectedSubject, token]);
+
+  const activeChapter = chapters.find(c => c._id === selectedChapter);
+
+  const handleSaveNote = async () => {
+    if (!activeChapter || !noteText.trim()) return;
+    try {
+      const newNotes = [...(activeChapter.shortNotes || [])];
+      if (editing === -1) {
+        newNotes.push(noteText);
+      } else {
+        newNotes[editing] = noteText;
+      }
+      const updated = await api(token).put(`/api/admin/chapters/${selectedChapter}`, { shortNotes: newNotes });
+      setChapters(chapters.map(c => c._id === selectedChapter ? updated.data : c));
+      showToast('Note saved!');
+      setEditing(null);
+      setNoteText('');
+    } catch {
+      showToast('Failed to save note', 'error');
+    }
+  };
+
+  const handleDeleteNote = async (idx) => {
+    if (!activeChapter) return;
+    try {
+      const newNotes = [...(activeChapter.shortNotes || [])];
+      newNotes.splice(idx, 1);
+      const updated = await api(token).put(`/api/admin/chapters/${selectedChapter}`, { shortNotes: newNotes });
+      setChapters(chapters.map(c => c._id === selectedChapter ? updated.data : c));
+      showToast('Note deleted!');
+    } catch {
+      showToast('Failed to delete note', 'error');
+    }
+  };
+
+  return (
+    <>
+      <div className="admin-panel-header">
+        <div>
+          <h2 className="admin-panel-title">Notes</h2>
+          <p className="admin-panel-subtitle">Manage short notes for specific chapters</p>
+        </div>
+      </div>
+
+      <div className="admin-filter-bar" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <select className="filter-select" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSubject(''); setSelectedChapter(''); }}>
+          <option value="">Select a Class...</option>
+          {classes.map(c => (
+            <option key={c._id} value={c._id}>{c.name}</option>
+          ))}
+        </select>
+
+        <select className="filter-select" value={selectedSubject} onChange={e => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} disabled={!selectedClass}>
+          <option value="">Select a Subject...</option>
+          {subjects.map(s => (
+            <option key={s._id} value={s._id}>{s.name}</option>
+          ))}
+        </select>
+        
+        <select className="filter-select" value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)} disabled={!selectedSubject || loading}>
+          <option value="">Select a Chapter...</option>
+          {chapters.map(c => (
+            <option key={c._id} value={c._id}>{c.title}</option>
+          ))}
+        </select>
+      </div>
+
+      {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
+
+      {activeChapter && (
+        <div style={{ marginTop: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--text-main)' }}>Notes for: {activeChapter.title}</h3>
+            <button className="btn-primary" onClick={() => { setEditing(-1); setNoteText(''); }} style={{ fontSize: '0.8rem' }}>
+              <Plus size={15} /> Add Note
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+            {(!activeChapter.shortNotes || activeChapter.shortNotes.length === 0) ? (
+              <p style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>No notes found for this chapter.</p>
+            ) : (
+              activeChapter.shortNotes.map((note, idx) => (
+                <div key={idx} style={{
+                  background: 'var(--admin-surface)',
+                  border: '1px solid var(--admin-border)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: '1rem'
+                }}>
+                  <div style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.6, flex: 1 }} className="rich-text-content" dangerouslySetInnerHTML={{ __html: note }} />
+                  <div className="table-actions">
+                    <button className="table-btn" onClick={() => { setEditing(idx); setNoteText(note); }}><Pencil size={13} /></button>
+                    <button className="table-btn danger" onClick={() => handleDeleteNote(idx)}><Trash2 size={13} /></button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Note Modal */}
+      <AnimatePresence>
+        {editing !== null && (
+          <div className="admin-modal-overlay" onClick={() => setEditing(null)}>
+            <motion.div
+              className="admin-modal"
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="admin-modal-header">
+                <h3>{editing === -1 ? 'Add Note' : 'Edit Note'}</h3>
+                <button className="modal-close-btn" onClick={() => setEditing(null)}><X size={18} /></button>
+              </div>
+              <div className="admin-modal-body">
+                <div className="form-group">
+                  <label className="form-label">Note Content</label>
+                  <ReactQuill theme="snow" modules={modules} value={noteText} onChange={setNoteText} placeholder="Type note here..." style={{ height: '200px', marginBottom: '3rem' }} />
+                </div>
+                <div className="form-modal-footer" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+                  <button type="button" className="btn-primary" onClick={handleSaveNote}>Save Note</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Q&A PANEL
+// ═══════════════════════════════════════════════════════════════════════════════
+function QAPanel({ token, showToast }) {
+  const modules = useQuillModules(token, showToast);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [chapters, setChapters] = useState([]);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(null); // index of Q&A being edited, or -1 for new
+  const [qaForm, setQaForm] = useState({ question: '', answer: '' });
+
+  useEffect(() => {
+    api(token).get('/api/admin/classes').then(res => setClasses(res.data));
+  }, [token]);
+
+  useEffect(() => {
+    if (selectedClass) {
+      api(token).get(`/api/admin/subjects?classId=${selectedClass}`).then(res => setSubjects(res.data));
+    } else {
+      setSubjects([]);
+      setSelectedSubject('');
+      setSelectedChapter('');
+    }
+  }, [selectedClass, token]);
+
+  useEffect(() => {
+    if (selectedSubject) {
+      setLoading(true);
+      api(token).get(`/api/admin/chapters?subjectId=${selectedSubject}`)
+        .then(res => setChapters(res.data))
+        .finally(() => setLoading(false));
+    } else {
+      setChapters([]);
+      setSelectedChapter('');
+    }
+  }, [selectedSubject, token]);
+
+  const activeChapter = chapters.find(c => c._id === selectedChapter);
+
+  const handleSaveQA = async () => {
+    if (!activeChapter || !qaForm.question.trim() || !qaForm.answer.trim()) return;
+    try {
+      const newQA = [...(activeChapter.questions || [])];
+      if (editing === -1) {
+        newQA.push(qaForm);
+      } else {
+        newQA[editing] = qaForm;
+      }
+      const updated = await api(token).put(`/api/admin/chapters/${selectedChapter}`, { questions: newQA });
+      setChapters(chapters.map(c => c._id === selectedChapter ? updated.data : c));
+      showToast('Q&A saved!');
+      setEditing(null);
+      setQaForm({ question: '', answer: '' });
+    } catch {
+      showToast('Failed to save Q&A', 'error');
+    }
+  };
+
+  const handleDeleteQA = async (idx) => {
+    if (!activeChapter) return;
+    try {
+      const newQA = [...(activeChapter.questions || [])];
+      newQA.splice(idx, 1);
+      const updated = await api(token).put(`/api/admin/chapters/${selectedChapter}`, { questions: newQA });
+      setChapters(chapters.map(c => c._id === selectedChapter ? updated.data : c));
+      showToast('Q&A deleted!');
+    } catch {
+      showToast('Failed to delete Q&A', 'error');
+    }
+  };
+
+  return (
+    <>
+      <div className="admin-panel-header">
+        <div>
+          <h2 className="admin-panel-title">Question & Answers</h2>
+          <p className="admin-panel-subtitle">Manage Q&A pairs for specific chapters</p>
+        </div>
+      </div>
+
+      <div className="admin-filter-bar" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <select className="filter-select" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSubject(''); setSelectedChapter(''); }}>
+          <option value="">Select a Class...</option>
+          {classes.map(c => (
+            <option key={c._id} value={c._id}>{c.name}</option>
+          ))}
+        </select>
+
+        <select className="filter-select" value={selectedSubject} onChange={e => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} disabled={!selectedClass}>
+          <option value="">Select a Subject...</option>
+          {subjects.map(s => (
+            <option key={s._id} value={s._id}>{s.name}</option>
+          ))}
+        </select>
+        
+        <select className="filter-select" value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)} disabled={!selectedSubject || loading}>
+          <option value="">Select a Chapter...</option>
+          {chapters.map(c => (
+            <option key={c._id} value={c._id}>{c.title}</option>
+          ))}
+        </select>
+      </div>
+
+      {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
+
+      {activeChapter && (
+        <div style={{ marginTop: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--text-main)' }}>Q&A for: {activeChapter.title}</h3>
+            <button className="btn-primary" onClick={() => { setEditing(-1); setQaForm({ question: '', answer: '' }); }} style={{ fontSize: '0.8rem' }}>
+              <Plus size={15} /> Add Q&A
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+            {(!activeChapter.questions || activeChapter.questions.length === 0) ? (
+              <p style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>No Q&A found for this chapter.</p>
+            ) : (
+              activeChapter.questions.map((qa, idx) => (
+                <div key={idx} style={{
+                  background: 'var(--admin-surface)',
+                  border: '1px solid var(--admin-border)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: '1rem'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ color: 'var(--text-main)', fontSize: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>Q: {qa.question}</h4>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6 }} className="rich-text-content">
+                      <strong style={{ marginRight: '0.5rem' }}>A:</strong>
+                      <span dangerouslySetInnerHTML={{ __html: qa.answer }} />
+                    </div>
+                  </div>
+                  <div className="table-actions">
+                    <button className="table-btn" onClick={() => { setEditing(idx); setQaForm(qa); }}><Pencil size={13} /></button>
+                    <button className="table-btn danger" onClick={() => handleDeleteQA(idx)}><Trash2 size={13} /></button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Q&A Modal */}
+      <AnimatePresence>
+        {editing !== null && (
+          <div className="admin-modal-overlay" onClick={() => setEditing(null)}>
+            <motion.div
+              className="admin-modal"
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="admin-modal-header">
+                <h3>{editing === -1 ? 'Add Q&A' : 'Edit Q&A'}</h3>
+                <button className="modal-close-btn" onClick={() => setEditing(null)}><X size={18} /></button>
+              </div>
+              <div className="admin-modal-body">
+                <div className="form-group">
+                  <label className="form-label">Question</label>
+                  <input className="form-input" value={qaForm.question} onChange={e => setQaForm({ ...qaForm, question: e.target.value })} placeholder="Type question..." />
+                </div>
+                <div className="form-group" style={{ marginTop: '1rem' }}>
+                  <label className="form-label">Answer</label>
+                  <ReactQuill theme="snow" modules={modules} value={qaForm.answer} onChange={val => setQaForm({ ...qaForm, answer: val })} placeholder="Type answer..." style={{ height: '200px', marginBottom: '3rem' }} />
+                </div>
+                <div className="form-modal-footer" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+                  <button type="button" className="btn-primary" onClick={handleSaveQA}>Save Q&A</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  DASHBOARD OVERVIEW
 // ═══════════════════════════════════════════════════════════════════════════════
 function Dashboard({ token }) {
@@ -852,6 +1260,8 @@ export default function Admin() {
     { id: 'classes', label: 'Classes', icon: GraduationCap },
     { id: 'subjects', label: 'Subjects', icon: Library },
     { id: 'chapters', label: 'Chapters', icon: Layers },
+    { id: 'notes', label: 'Notes', icon: FileText },
+    { id: 'qa', label: 'Q&A', icon: HelpCircle },
   ];
 
   const renderPanel = () => {
@@ -859,6 +1269,8 @@ export default function Admin() {
       case 'classes':   return <ClassesPanel token={token} showToast={showToast} />;
       case 'subjects':  return <SubjectsPanel token={token} showToast={showToast} />;
       case 'chapters':  return <ChaptersPanel token={token} showToast={showToast} />;
+      case 'notes':     return <NotesPanel token={token} showToast={showToast} />;
+      case 'qa':        return <QAPanel token={token} showToast={showToast} />;
       default:          return <Dashboard token={token} />;
     }
   };

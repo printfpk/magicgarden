@@ -1,10 +1,13 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
 import Class from '../models/Class.js';
 import Subject from '../models/Subject.js';
 import Chapter from '../models/Chapter.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Middleware to verify Admin JWT
 const verifyAdmin = (req, res, next) => {
@@ -145,8 +148,19 @@ router.delete('/chapters/:id', async (req, res) => {
   try {
     await Chapter.findByIdAndDelete(req.params.id);
     res.json({ message: 'Chapter deleted' });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ─── IMAGE UPLOAD ────────────────────────────────────────────────────────
+router.post('/upload-image', upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No image provided' });
+  try {
+    const result = await uploadToCloudinary(req.file.buffer);
+    res.json({ url: result.secure_url });
+  } catch (error) {
+    res.status(500).json({ message: 'Cloudinary upload failed', error: error.message });
   }
 });
 
