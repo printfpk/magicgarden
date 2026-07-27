@@ -1,53 +1,59 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { BlockNoteView } from "@blocknote/mantine";
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
+import { useCreateBlockNote } from "@blocknote/react";
 import axios from 'axios';
 import {
   LayoutDashboard, BookOpen, Library, Layers, LogOut,
   Plus, Pencil, Trash2, X, ChevronDown, Check, AlertCircle,
-  GraduationCap, Menu, FileText, HelpCircle
+  GraduationCap, Menu, FileText, HelpCircle, Maximize2, Minimize2
 } from 'lucide-react';
 
-const useQuillModules = (token, showToast) => {
-  return React.useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{'list': 'ordered'}, {'list': 'bullet'}],
-        ['link', 'image'],
-        ['clean']
-      ],
-      handlers: {
-        image: function() {
-          const input = document.createElement('input');
-          input.setAttribute('type', 'file');
-          input.setAttribute('accept', 'image/*');
-          input.click();
+// ─── Block Editor Component ────────────────────────────────────────────────
+function BlockEditor({ value, onChange, token, isFullscreen }) {
+  const editor = useCreateBlockNote({
+    uploadFile: async (file) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await api(token).post('/api/admin/upload-image', formData);
+      return res.data.url;
+    }
+  });
 
-          input.onchange = async () => {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const formData = new FormData();
-            formData.append('image', file);
-            
-            const range = this.quill.getSelection(true);
-            try {
-              showToast('Uploading image...', 'info');
-              const res = await api(token).post('/api/admin/upload-image', formData);
-              this.quill.insertEmbed(range.index, 'image', res.data.url);
-              showToast('Image uploaded!', 'success');
-            } catch (err) {
-              console.error(err);
-              showToast('Failed to upload image', 'error');
-            }
-          };
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      if (value) {
+        const blocks = await editor.tryParseHTMLToBlocks(value);
+        if (isMounted) {
+          editor.replaceBlocks(editor.document, blocks);
         }
       }
     }
-  }), [token, showToast]);
-};
+    load();
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleChange = async () => {
+    const html = await editor.blocksToHTMLLossy(editor.document);
+    onChange(html);
+  };
+
+  return (
+    <div style={{ 
+      height: isFullscreen ? 'calc(100vh - 200px)' : '300px', 
+      overflowY: 'auto',
+      border: '1px solid var(--border)',
+      borderRadius: '8px',
+      padding: '1rem',
+      background: 'var(--bg-main)'
+    }}>
+      <BlockNoteView editor={editor} onChange={handleChange} theme="light" />
+    </div>
+  );
+}
 
 // ─── Axios helper ────────────────────────────────────────────────────────────
 const api = (token) => axios.create({
@@ -735,7 +741,6 @@ function ChaptersPanel({ token, showToast }) {
 //  NOTES PANEL
 // ═══════════════════════════════════════════════════════════════════════════════
 function NotesPanel({ token, showToast }) {
-  const modules = useQuillModules(token, showToast);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
@@ -744,6 +749,7 @@ function NotesPanel({ token, showToast }) {
   const [selectedChapter, setSelectedChapter] = useState('');
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // index of note being edited, or -1 for new
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
@@ -879,22 +885,29 @@ function NotesPanel({ token, showToast }) {
       {/* Note Modal */}
       <AnimatePresence>
         {editing !== null && (
-          <div className="admin-modal-overlay" onClick={() => setEditing(null)}>
+          <div className="admin-modal-overlay" onClick={() => setEditing(null)} style={isFullscreen ? { padding: 0 } : {}}>
             <motion.div
               className="admin-modal"
+              data-lenis-prevent="true"
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               onClick={e => e.stopPropagation()}
+              style={isFullscreen ? { maxWidth: '100%', width: '100vw', height: '100vh', margin: 0, borderRadius: 0, display: 'flex', flexDirection: 'column' } : {}}
             >
               <div className="admin-modal-header">
                 <h3>{editing === -1 ? 'Add Note' : 'Edit Note'}</h3>
-                <button className="modal-close-btn" onClick={() => setEditing(null)}><X size={18} /></button>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <button type="button" className="modal-close-btn" onClick={() => setIsFullscreen(!isFullscreen)}>
+                    {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
+                  <button type="button" className="modal-close-btn" onClick={() => setEditing(null)}><X size={18} /></button>
+                </div>
               </div>
-              <div className="admin-modal-body">
-                <div className="form-group">
+              <div className="admin-modal-body" style={isFullscreen ? { flex: 1, display: 'flex', flexDirection: 'column' } : {}}>
+                <div className="form-group" style={isFullscreen ? { flex: 1, display: 'flex', flexDirection: 'column' } : {}}>
                   <label className="form-label">Note Content</label>
-                  <ReactQuill theme="snow" modules={modules} value={noteText} onChange={setNoteText} placeholder="Type note here..." style={{ height: '200px', marginBottom: '3rem' }} />
+                  <BlockEditor value={noteText} onChange={setNoteText} token={token} isFullscreen={isFullscreen} />
                 </div>
                 <div className="form-modal-footer" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                   <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
@@ -913,7 +926,6 @@ function NotesPanel({ token, showToast }) {
 //  Q&A PANEL
 // ═══════════════════════════════════════════════════════════════════════════════
 function QAPanel({ token, showToast }) {
-  const modules = useQuillModules(token, showToast);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
@@ -922,6 +934,7 @@ function QAPanel({ token, showToast }) {
   const [selectedChapter, setSelectedChapter] = useState('');
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // index of Q&A being edited, or -1 for new
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [qaForm, setQaForm] = useState({ question: '', answer: '' });
 
   useEffect(() => {
@@ -1060,29 +1073,34 @@ function QAPanel({ token, showToast }) {
         </div>
       )}
 
-      {/* Q&A Modal */}
       <AnimatePresence>
         {editing !== null && (
-          <div className="admin-modal-overlay" onClick={() => setEditing(null)}>
+          <div className="admin-modal-overlay" onClick={() => setEditing(null)} style={isFullscreen ? { padding: 0 } : {}}>
             <motion.div
               className="admin-modal"
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               onClick={e => e.stopPropagation()}
+              style={isFullscreen ? { maxWidth: '100%', width: '100vw', height: '100vh', margin: 0, borderRadius: 0, display: 'flex', flexDirection: 'column' } : {}}
             >
               <div className="admin-modal-header">
                 <h3>{editing === -1 ? 'Add Q&A' : 'Edit Q&A'}</h3>
-                <button className="modal-close-btn" onClick={() => setEditing(null)}><X size={18} /></button>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <button type="button" className="modal-close-btn" onClick={() => setIsFullscreen(!isFullscreen)}>
+                    {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
+                  <button type="button" className="modal-close-btn" onClick={() => setEditing(null)}><X size={18} /></button>
+                </div>
               </div>
-              <div className="admin-modal-body">
+              <div className="admin-modal-body" style={isFullscreen ? { flex: 1, display: 'flex', flexDirection: 'column' } : {}}>
                 <div className="form-group">
                   <label className="form-label">Question</label>
                   <input className="form-input" value={qaForm.question} onChange={e => setQaForm({ ...qaForm, question: e.target.value })} placeholder="Type question..." />
                 </div>
-                <div className="form-group" style={{ marginTop: '1rem' }}>
+                <div className="form-group" style={isFullscreen ? { flex: 1, display: 'flex', flexDirection: 'column', marginTop: '1rem' } : { marginTop: '1rem' }}>
                   <label className="form-label">Answer</label>
-                  <ReactQuill theme="snow" modules={modules} value={qaForm.answer} onChange={val => setQaForm({ ...qaForm, answer: val })} placeholder="Type answer..." style={{ height: '200px', marginBottom: '3rem' }} />
+                  <BlockEditor value={qaForm.answer} onChange={(val) => setQaForm({ ...qaForm, answer: val })} token={token} isFullscreen={isFullscreen} />
                 </div>
                 <div className="form-modal-footer" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                   <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
