@@ -183,6 +183,7 @@
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  z-index: 1;
 }
 
 .btn-primary::before {
@@ -1257,6 +1258,8 @@
   left: 0;
   z-index: 200;
   overflow-y: auto;
+  backdrop-filter: var(--admin-glass-blur);
+  -webkit-backdrop-filter: var(--admin-glass-blur);
 }
 
 .admin-sidebar-header {
@@ -1351,6 +1354,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  backdrop-filter: var(--admin-glass-blur);
+  -webkit-backdrop-filter: var(--admin-glass-blur);
 }
 
 .admin-mobile-toggle {
@@ -1407,9 +1412,12 @@
 /* Data Table */
 .admin-table-wrapper {
   background: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: var(--admin-shadow);
+  border-radius: 16px;
   overflow: hidden;
+  backdrop-filter: var(--admin-glass-blur);
+  -webkit-backdrop-filter: var(--admin-glass-blur);
 }
 
 .admin-table {
@@ -1419,23 +1427,28 @@
 
 .admin-table th {
   text-align: left;
-  padding: 0.875rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-faint);
-  border-bottom: 1px solid var(--admin-border);
-  background: var(--bg-glass);
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  background: rgba(255, 255, 255, 0.4);
   font-family: var(--font-sans);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .admin-table td {
-  padding: 1rem 1.25rem;
-  font-size: 0.9rem;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
-  border-bottom: 1px solid var(--admin-border);
+  border-bottom: 1px solid rgba(0,0,0,0.02);
   vertical-align: middle;
+  transition: all 0.3s ease;
+}
+
+.admin-table tr {
+  transition: all 0.3s ease;
 }
 
 .admin-table tr:last-child td {
@@ -1443,7 +1456,8 @@
 }
 
 .admin-table tr:hover td {
-  background: var(--bg-glass);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-main);
 }
 
 .admin-table .table-actions {

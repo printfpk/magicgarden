@@ -190,7 +190,7 @@ function ClassesPanel({ token, showToast }) {
       {loading ? (
         <div className="loading-container"><div className="loading-spinner" /></div>
       ) : (
-        <div className="admin-table-wrapper">
+        <motion.div className="admin-table-wrapper" initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} transition={{duration:0.4, delay:0.1}}>
           <table className="admin-table">
             <thead>
               <tr>
@@ -220,7 +220,7 @@ function ClassesPanel({ token, showToast }) {
               )}
             </tbody>
           </table>
-        </div>
+        </motion.div>
       )}
 
       {/* Form Modal */}
@@ -352,7 +352,7 @@ function SubjectsPanel({ token, showToast }) {
       {loading ? (
         <div className="loading-container"><div className="loading-spinner" /></div>
       ) : (
-        <div className="admin-table-wrapper">
+        <motion.div className="admin-table-wrapper" initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} transition={{duration:0.4, delay:0.1}}>
           <table className="admin-table">
             <thead>
               <tr><th>Name</th><th>Class</th><th>Created</th><th>Actions</th></tr>
@@ -377,7 +377,7 @@ function SubjectsPanel({ token, showToast }) {
               )}
             </tbody>
           </table>
-        </div>
+        </motion.div>
       )}
 
       <AnimatePresence>
@@ -673,7 +673,7 @@ function ChaptersPanel({ token, showToast }) {
       {loading ? (
         <div className="loading-container"><div className="loading-spinner" /></div>
       ) : (
-        <div className="admin-table-wrapper">
+        <motion.div className="admin-table-wrapper" initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} transition={{duration:0.4, delay:0.1}}>
           <table className="admin-table">
             <thead>
               <tr><th>#</th><th>Title</th><th>Subject</th><th>Notes</th><th>Q&amp;A</th><th>Actions</th></tr>
@@ -700,7 +700,7 @@ function ChaptersPanel({ token, showToast }) {
               )}
             </tbody>
           </table>
-        </div>
+        </motion.div>
       )}
 
       {/* Chapter Form Modal */}
@@ -860,22 +860,27 @@ function NotesPanel({ token, showToast }) {
               <p style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>No notes found for this chapter.</p>
             ) : (
               activeChapter.shortNotes.map((note, idx) => (
-                <div key={idx} style={{
+                <motion.div key={idx}
+                  initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} transition={{duration:0.3, delay:idx*0.05}} 
+                  style={{
                   background: 'var(--admin-surface)',
-                  border: '1px solid var(--admin-border)',
-                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.6)',
+                  borderRadius: '16px',
                   padding: '1.25rem',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
-                  gap: '1rem'
+                  gap: '1rem',
+                  boxShadow: 'var(--admin-shadow)',
+                  backdropFilter: 'var(--admin-glass-blur)',
+                  WebkitBackdropFilter: 'var(--admin-glass-blur)'
                 }}>
-                  <div style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.6, flex: 1 }} className="rich-text-content" dangerouslySetInnerHTML={{ __html: note }} />
+                  <div style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.6, flex: 1, minWidth: 0 }} className="rich-text-content" dangerouslySetInnerHTML={{ __html: note }} />
                   <div className="table-actions">
                     <button className="table-btn" onClick={() => { setEditing(idx); setNoteText(note); }}><Pencil size={13} /></button>
                     <button className="table-btn danger" onClick={() => handleDeleteNote(idx)}><Trash2 size={13} /></button>
                   </div>
-                </div>
+                </motion.div>
               ))
             )}
           </div>
@@ -1045,17 +1050,22 @@ function QAPanel({ token, showToast }) {
               <p style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>No Q&A found for this chapter.</p>
             ) : (
               activeChapter.questions.map((qa, idx) => (
-                <div key={idx} style={{
+                <motion.div key={idx}
+                  initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} transition={{duration:0.3, delay:idx*0.05}} 
+                  style={{
                   background: 'var(--admin-surface)',
-                  border: '1px solid var(--admin-border)',
-                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.6)',
+                  borderRadius: '16px',
                   padding: '1.25rem',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
-                  gap: '1rem'
+                  gap: '1rem',
+                  boxShadow: 'var(--admin-shadow)',
+                  backdropFilter: 'var(--admin-glass-blur)',
+                  WebkitBackdropFilter: 'var(--admin-glass-blur)'
                 }}>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <h4 style={{ color: 'var(--text-main)', fontSize: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>Q: {qa.question}</h4>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6 }} className="rich-text-content">
                       <strong style={{ marginRight: '0.5rem' }}>A:</strong>
@@ -1066,7 +1076,7 @@ function QAPanel({ token, showToast }) {
                     <button className="table-btn" onClick={() => { setEditing(idx); setQaForm(qa); }}><Pencil size={13} /></button>
                     <button className="table-btn danger" onClick={() => handleDeleteQA(idx)}><Trash2 size={13} /></button>
                   </div>
-                </div>
+                </motion.div>
               ))
             )}
           </div>
@@ -1132,9 +1142,9 @@ function Dashboard({ token }) {
   }, [token]);
 
   const statCards = [
-    { label: 'Classes', value: stats.classes, icon: GraduationCap, color: '#D4AF37' },
-    { label: 'Subjects', value: stats.subjects, icon: Library, color: '#3d9e7a' },
-    { label: 'Chapters', value: stats.chapters, icon: Layers, color: '#818cf8' },
+    { label: 'Classes', value: stats.classes, icon: GraduationCap, color: '#b48600', bg: 'linear-gradient(135deg, rgba(180, 134, 0, 0.12) 0%, rgba(180, 134, 0, 0.02) 100%)', border: 'rgba(180, 134, 0, 0.2)' },
+    { label: 'Subjects', value: stats.subjects, icon: Library, color: '#1c7a54', bg: 'linear-gradient(135deg, rgba(28, 122, 84, 0.12) 0%, rgba(28, 122, 84, 0.02) 100%)', border: 'rgba(28, 122, 84, 0.2)' },
+    { label: 'Chapters', value: stats.chapters, icon: Layers, color: '#4f46e5', bg: 'linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(79, 70, 229, 0.02) 100%)', border: 'rgba(79, 70, 229, 0.2)' },
   ];
 
   return (
@@ -1147,37 +1157,55 @@ function Dashboard({ token }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        {statCards.map(card => {
+        {statCards.map((card, i) => {
           const Icon = card.icon;
           return (
-            <div key={card.label} style={{
-              background: 'var(--admin-surface)',
-              border: '1px solid var(--admin-border)',
-              borderRadius: 10,
-              padding: '1.75rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-            }}>
+            <motion.div 
+              key={card.label} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              whileHover={{ y: -5, scale: 1.02 }}
+              style={{
+                background: card.bg || 'var(--admin-surface)',
+                border: `1px solid ${card.border || 'var(--admin-border)'}`,
+                borderRadius: 16,
+                padding: '1.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                boxShadow: 'var(--admin-shadow)',
+                backdropFilter: 'var(--admin-glass-blur)',
+                WebkitBackdropFilter: 'var(--admin-glass-blur)',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-faint)' }}>{card.label}</span>
-                <Icon size={18} style={{ color: card.color }} />
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: card.color, fontWeight: 600 }}>{card.label}</span>
+                <Icon size={20} style={{ color: card.color }} />
               </div>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: '2.5rem', color: 'var(--text-main)', lineHeight: 1 }}>{card.value}</span>
-            </div>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: '3rem', color: 'var(--text-main)', lineHeight: 1 }}>{card.value}</span>
+            </motion.div>
           );
         })}
       </div>
 
-      <div style={{
-        background: 'var(--admin-surface)',
-        border: '1px solid var(--admin-border)',
-        borderRadius: 10,
-        padding: '2rem',
-        color: 'var(--text-faint)',
-        fontSize: '0.9rem',
-        lineHeight: 1.7,
-      }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+        style={{
+          background: 'var(--admin-surface)',
+          border: '1px solid rgba(255, 255, 255, 0.6)',
+          borderRadius: 16,
+          padding: '2rem',
+          color: 'var(--text-faint)',
+          fontSize: '0.9rem',
+          lineHeight: 1.7,
+          boxShadow: 'var(--admin-shadow)',
+          backdropFilter: 'var(--admin-glass-blur)',
+          WebkitBackdropFilter: 'var(--admin-glass-blur)',
+        }}
+      >
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', color: 'var(--accent-gold)', marginBottom: '0.75rem' }}>Quick Guide</h3>
         <ol style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', listStyle: 'decimal' }}>
           <li>Start by creating <strong style={{ color: 'var(--text-muted)' }}>Classes</strong> (e.g. "Class X").</li>
@@ -1185,7 +1213,7 @@ function Dashboard({ token }) {
           <li>Create <strong style={{ color: 'var(--text-muted)' }}>Chapters</strong> with rich content — summaries, short notes, Q&amp;A pairs, PDF and video links.</li>
           <li>Students will immediately see your content on the public site.</li>
         </ol>
-      </div>
+      </motion.div>
     </div>
   );
 }
