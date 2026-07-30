@@ -9,23 +9,34 @@ import Subjects from './pages/Subjects';
 import Chapters from './pages/Chapters';
 import ChapterDetail from './pages/ChapterDetail';
 import Admin from './pages/Admin';
+import MobileLayout from './components/MobileLayout';
+import Test from './pages/Test';
+import Bookmarks from './pages/Bookmarks';
+import Download from './pages/Download';
+import Live from './pages/Live';
 import './App.css';
 
 function App() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const isHome = location.pathname === '/';
 
   return (
     <div className="app-container">
       <div className="noise-overlay"></div>
       <CustomCursor />
-      {!isAdmin && <Navbar />}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
-          <Route path="/classes" element={<Classes />} />
-          <Route path="/classes/:classId/subjects" element={<Subjects />} />
-          <Route path="/subjects/:subjectId/chapters" element={<Chapters />} />
+          <Route element={<MobileLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/classes/:classId/subjects" element={<Subjects />} />
+            <Route path="/subjects/:subjectId/chapters" element={<Chapters />} />
+            <Route path="/test" element={<Test />} />
+            <Route path="/bookmarks" element={<Bookmarks />} />
+            <Route path="/download" element={<Download />} />
+            <Route path="/live" element={<Live />} />
+          </Route>
           <Route path="/chapters/:chapterId" element={<ChapterDetail />} />
           <Route path="/admin/*" element={<Admin />} />
         </Routes>

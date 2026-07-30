@@ -5,11 +5,11 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useCreateBlockNote } from "@blocknote/react";
 import axios from 'axios';
-import {
-  LayoutDashboard, BookOpen, Library, Layers, LogOut,
+import { LayoutDashboard, BookOpen, Library, Layers, LogOut,
   Plus, Pencil, Trash2, X, ChevronDown, Check, AlertCircle,
-  GraduationCap, Menu, FileText, HelpCircle, Maximize2, Minimize2
+  GraduationCap, Menu, FileText, HelpCircle, Maximize2, Minimize2, ArrowLeft
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // ─── Block Editor Component ────────────────────────────────────────────────
 function BlockEditor({ value, onChange, token, isFullscreen }) {
@@ -1253,7 +1253,24 @@ export default function Admin() {
   // ── Login Screen ─────────────────────────────────────────────────────────────
   if (!token) {
     return (
-      <div className="admin-login-page">
+      <div className="admin-login-page" style={{ position: 'relative' }}>
+        <Link 
+          to="/" 
+          style={{ 
+            position: 'absolute', 
+            top: '2rem', 
+            left: '2rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem', 
+            color: 'var(--text-main)', 
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+            fontWeight: 500
+          }}
+        >
+          <ArrowLeft size={16} /> Back to Home
+        </Link>
         <motion.div
           className="admin-login-card"
           initial={{ opacity: 0, y: 24 }}
@@ -1330,9 +1347,26 @@ export default function Admin() {
 
       {/* Sidebar */}
       <aside className={`admin-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
-        <div className="admin-sidebar-header">
-          <p className="admin-sidebar-brand">Magic Study Garden</p>
-          <p className="admin-sidebar-sub">Content Manager</p>
+        <div className="admin-sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p className="admin-sidebar-brand" style={{ marginBottom: 0 }}>Magic Study Garden</p>
+          <button 
+            onClick={handleLogout} 
+            className="admin-sidebar-sub"
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#ef4444', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: 0,
+              fontWeight: 600
+            }}
+          >
+            <LogOut size={14} />
+            LOGOUT
+          </button>
         </div>
 
         <nav className="admin-sidebar-nav">
@@ -1349,12 +1383,7 @@ export default function Admin() {
           ))}
         </nav>
 
-        <div className="admin-sidebar-footer">
-          <button className="sidebar-nav-item" onClick={handleLogout} style={{ color: '#ef4444', width: '100%' }}>
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
+
       </aside>
 
       {/* Main */}

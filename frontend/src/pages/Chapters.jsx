@@ -1,24 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { BookOpen, ArrowRight, Layers } from 'lucide-react';
-
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const item = {
-  hidden: { opacity: 0, x: -16 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
-};
+import { Bookmark } from 'lucide-react';
+import '../mobile-home.css';
 
 export default function Chapters() {
   const { subjectId } = useParams();
   const [chapters, setChapters] = useState([]);
   const [subjectName, setSubjectName] = useState('');
-  const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +18,6 @@ export default function Chapters() {
 
         // Fetch all classes, then their subjects, to find this subject's name
         const clsRes = await axios.get('/api/classes');
-        setClassInfo(clsRes.data);
 
         // Find subject name by fetching subjects for each class until we find ours
         for (const cls of clsRes.data) {
@@ -50,60 +38,36 @@ export default function Chapters() {
   }, [subjectId]);
 
   return (
-    <div className="page-container">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="page-header"
-      >
-        <p className="breadcrumb">
-          <Link to="/">Home</Link>
-          <span className="breadcrumb-sep">/</span>
-          <Link to="/classes">Curriculum</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span>{subjectName || 'Chapters'}</span>
-        </p>
-        <h1 className="page-title">{subjectName || 'Chapters'}</h1>
-        <p className="page-subtitle">
-          {chapters.length > 0
-            ? `${chapters.length} chapter${chapters.length !== 1 ? 's' : ''} available`
-            : 'Explore the chapters in this subject.'}
-        </p>
-      </motion.div>
+    <div style={{ padding: '1.25rem' }}>
+      <p style={{ fontSize: '0.8rem', color: '#999', marginBottom: '0.5rem' }}>
+        <Link to="/classes" style={{ color: '#999', textDecoration: 'none' }}>Classes</Link> / {subjectName || 'Subject'}
+      </p>
+      <h2 className="section-title">Chapters</h2>
 
-      {loading ? (
-        <div className="loading-container">
-          <div className="loading-spinner" />
-          <span className="loading-text">Opening the book…</span>
-        </div>
-      ) : chapters.length === 0 ? (
-        <div className="empty-state">
-          <Layers size={48} className="empty-state-icon" />
-          <h3>No chapters yet</h3>
-          <p>The admin hasn't added any chapters to this subject.</p>
-        </div>
-      ) : (
-        <motion.div
-          className="chapters-list"
-          variants={container}
-          initial="hidden"
-          animate="show"
-        >
-          {chapters.map((chapter, index) => (
-            <motion.div key={chapter._id} variants={item}>
-              <Link
-                to={`/chapters/${chapter._id}`}
-                className="chapter-list-item"
-              >
-                <span className="chapter-item-number">{String(index + 1).padStart(2, '0')}</span>
-                <span className="chapter-item-title">{chapter.title}</span>
-                <ArrowRight size={16} className="chapter-item-arrow" />
+      <section className="chapters-section" style={{ marginTop: '1rem' }}>
+        {loading ? (
+          <div style={{ color: '#999' }}>Loading chapters...</div>
+        ) : chapters.length > 0 ? (
+          <div className="chapters-list">
+            {chapters.map((chap, idx) => (
+              <Link to={`/chapters/${chap._id}`} key={chap._id} className="chapter-card" style={{ textDecoration: 'none' }}>
+                <div className="chapter-info">
+                  <h3>Chapter: {String(chap.order || idx + 1).padStart(2, '0')}</h3>
+                  <p className="chapter-desc">{chap.title}</p>
+                  {chap.summary && <p className="chapter-sub-desc">{chap.summary.substring(0, 50)}...</p>}
+                </div>
+                <div className="chapter-bookmark">
+                  <Bookmark size={28} color="#9333EA" fill="#9333EA" />
+                </div>
               </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div style={{ color: '#999', marginTop: '1rem' }}>
+            No chapters available for this subject.
+          </div>
+        )}
+      </section>
     </div>
   );
 }

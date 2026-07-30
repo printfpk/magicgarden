@@ -1,41 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import {
-  FlaskConical, BookOpen, Calculator, Globe, Music, Palette,
-  Microscope, Leaf, Landmark, Code, ArrowUpRight, Library
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import '../mobile-home.css';
 
-// Cycle through icons and accent colors
-const SUBJECT_ICONS = [
-  { icon: BookOpen, color: '#D4AF37' },
-  { icon: FlaskConical, color: '#3d9e7a' },
-  { icon: Calculator, color: '#818cf8' },
-  { icon: Globe, color: '#38bdf8' },
-  { icon: Microscope, color: '#f472b6' },
-  { icon: Leaf, color: '#4ade80' },
-  { icon: Landmark, color: '#fb923c' },
-  { icon: Music, color: '#c084fc' },
-  { icon: Palette, color: '#f87171' },
-  { icon: Code, color: '#34d399' },
+const SUBJECT_COLORS = [
+  { bg: '#F2C7C7', text: '#333', icon: '📐' },
+  { bg: '#FFFFFF', text: '#333', icon: '🧪' },
+  { bg: '#D5F3D8', text: '#333', icon: '⚛️' },
+  { bg: '#FFB7C5', text: '#333', icon: '🧬' },
 ];
-
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
-};
 
 export default function Subjects() {
   const { classId } = useParams();
   const [subjects, setSubjects] = useState([]);
   const [className, setClassName] = useState('');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch subjects + class name in parallel
@@ -53,61 +35,61 @@ export default function Subjects() {
   }, [classId]);
 
   return (
-    <div className="page-container">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="page-header"
-      >
-        <p className="breadcrumb">
-          <Link to="/">Home</Link>
-          <span className="breadcrumb-sep">/</span>
-          <Link to="/classes">Curriculum</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span>{className || 'Subjects'}</span>
-        </p>
-        <h1 className="page-title">{className || 'Subjects'}</h1>
-        <p className="page-subtitle">Choose a subject to explore its chapters.</p>
-      </motion.div>
-
+    <div style={{ padding: '1.25rem' }}>
+      <p style={{ fontSize: '0.8rem', color: '#999', marginBottom: '0.5rem' }}>
+        <Link to="/classes" style={{ color: '#999', textDecoration: 'none' }}>Classes</Link> / {className}
+      </p>
+      <h2 className="section-title">Subjects</h2>
+      
       {loading ? (
-        <div className="loading-container">
-          <div className="loading-spinner" />
-          <span className="loading-text">Unveiling subjects…</span>
-        </div>
-      ) : subjects.length === 0 ? (
-        <div className="empty-state">
-          <Library size={48} className="empty-state-icon" />
-          <h3>No subjects yet</h3>
-          <p>No subjects have been added to this class.</p>
-        </div>
-      ) : (
-        <motion.div
-          className="subjects-grid"
-          variants={container}
-          initial="hidden"
-          animate="show"
-        >
-          {subjects.map((sub, index) => {
-            const { icon: Icon, color } = SUBJECT_ICONS[index % SUBJECT_ICONS.length];
+        <div style={{ color: '#999' }}>Loading subjects...</div>
+      ) : subjects.length > 0 ? (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', 
+          gap: '1rem', 
+          marginTop: '1rem' 
+        }}>
+          {subjects.map((sub, idx) => {
+            const style = SUBJECT_COLORS[idx % SUBJECT_COLORS.length];
             return (
-              <motion.div key={sub._id} variants={item}>
-                <Link
-                  to={`/subjects/${sub._id}/chapters`}
-                  className="subject-card"
-                  style={{ '--subject-color': color }}
-                >
-                  <div className="subject-card-icon">
-                    <Icon size={22} />
-                  </div>
-                  <h2 className="subject-card-name">{sub.name}</h2>
-                  <p className="subject-card-meta">View chapters →</p>
-                </Link>
-              </motion.div>
+              <button 
+                key={sub._id} 
+                style={{ 
+                  backgroundColor: style.bg, 
+                  color: style.text,
+                  opacity: 1,
+                  transform: 'scale(1)',
+                  transition: 'all 0.2s ease-in-out',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  textAlign: 'center',
+                  border: '1.5px solid #111',
+                  boxShadow: '2px 2px 0px rgba(0,0,0,1)',
+                  borderRadius: '20px',
+                  padding: '1rem',
+                  height: '130px',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
+                onClick={() => navigate(`/subjects/${sub._id}/chapters`)}
+              >
+                <div style={{ fontSize: '2rem' }}>{style.icon}</div>
+                <div style={{ textTransform: 'capitalize', fontSize: '1rem', fontWeight: 'bold' }}>
+                  {sub.name || sub.title || 'Unknown Subject'}
+                </div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+                  Let's start <ChevronRight size={12} />
+                </div>
+              </button>
             );
           })}
-        </motion.div>
+        </div>
+      ) : (
+        <div style={{ color: '#999', marginTop: '1rem' }}>No subjects available.</div>
       )}
     </div>
   );

@@ -37,11 +37,11 @@
 
   /* Admin */
   --admin-sidebar-width: 260px;
-  --admin-bg: radial-gradient(circle at 15% 0%, #ffe4e6 0%, #e0e7ff 50%, #ccfbf1 100%);
-  --admin-surface: rgba(255, 255, 255, 0.65);
-  --admin-border: rgba(255, 255, 255, 0.4);
-  --admin-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
-  --admin-glass-blur: blur(16px);
+  --admin-bg: #F9F9F9;
+  --admin-surface: #FFFFFF;
+  --admin-border: #111111;
+  --admin-shadow: 2px 2px 0px rgba(0, 0, 0, 1);
+  --admin-glass-blur: blur(0px);
 
   /* Transitions */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
