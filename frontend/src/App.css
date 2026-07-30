@@ -1415,7 +1415,8 @@
   border: 1px solid rgba(255,255,255,0.6);
   box-shadow: var(--admin-shadow);
   border-radius: 16px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   backdrop-filter: var(--admin-glass-blur);
   -webkit-backdrop-filter: var(--admin-glass-blur);
 }
@@ -2151,10 +2152,20 @@
     grid-template-columns: 1fr;
   }
 
-  .crud-table th,
-  .crud-table td {
-    padding: 0.75rem 0.6rem;
-    font-size: 0.82rem;
+  .admin-table th,
+  .admin-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .table-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .table-btn {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.65rem;
   }
 
   /* Breadcrumb */
