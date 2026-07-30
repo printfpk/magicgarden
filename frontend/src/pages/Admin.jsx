@@ -812,6 +812,38 @@ function NotesPanel({ token, showToast }) {
     }
   };
 
+  const handleQuickAddSubject = async () => {
+    if (!selectedClass) return;
+    const name = window.prompt("Enter new subject name:");
+    if (!name || !name.trim()) return;
+    try {
+      const res = await api(token).post('/api/admin/subjects', { name, classId: selectedClass });
+      setSubjects([...subjects, res.data]);
+      setSelectedSubject(res.data._id);
+      showToast('Subject created!');
+    } catch {
+      showToast('Failed to create subject', 'error');
+    }
+  };
+
+  const handleQuickAddChapter = async () => {
+    if (!selectedSubject) return;
+    const title = window.prompt("Enter new chapter title:");
+    if (!title || !title.trim()) return;
+    try {
+      const res = await api(token).post('/api/admin/chapters', { 
+        title, 
+        subjectId: selectedSubject,
+        order: chapters.length + 1
+      });
+      setChapters([...chapters, res.data]);
+      setSelectedChapter(res.data._id);
+      showToast('Chapter created!');
+    } catch {
+      showToast('Failed to create chapter', 'error');
+    }
+  };
+
   return (
     <>
       <div className="admin-panel-header">
@@ -822,26 +854,42 @@ function NotesPanel({ token, showToast }) {
       </div>
 
       <div className="admin-filter-bar" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <select className="filter-select" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSubject(''); setSelectedChapter(''); }}>
-          <option value="">Select a Class...</option>
-          {classes.map(c => (
-            <option key={c._id} value={c._id}>{c.name}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <select className="filter-select" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSubject(''); setSelectedChapter(''); }}>
+            <option value="">Select a Class...</option>
+            {classes.map(c => (
+              <option key={c._id} value={c._id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
 
-        <select className="filter-select" value={selectedSubject} onChange={e => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} disabled={!selectedClass}>
-          <option value="">Select a Subject...</option>
-          {subjects.map(s => (
-            <option key={s._id} value={s._id}>{s.name}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <select className="filter-select" value={selectedSubject} onChange={e => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} disabled={!selectedClass}>
+            <option value="">Select a Subject...</option>
+            {subjects.map(s => (
+              <option key={s._id} value={s._id}>{s.name}</option>
+            ))}
+          </select>
+          {selectedClass && (
+            <button className="btn-secondary" style={{ padding: '0.4rem 0.6rem', minWidth: 'auto' }} onClick={handleQuickAddSubject} title="Add Subject">
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
         
-        <select className="filter-select" value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)} disabled={!selectedSubject || loading}>
-          <option value="">Select a Chapter...</option>
-          {chapters.map(c => (
-            <option key={c._id} value={c._id}>{c.title}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <select className="filter-select" value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)} disabled={!selectedSubject || loading}>
+            <option value="">Select a Chapter...</option>
+            {chapters.map(c => (
+              <option key={c._id} value={c._id}>{c.title}</option>
+            ))}
+          </select>
+          {selectedSubject && (
+            <button className="btn-secondary" style={{ padding: '0.4rem 0.6rem', minWidth: 'auto' }} onClick={handleQuickAddChapter} title="Add Chapter">
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
@@ -1002,6 +1050,38 @@ function QAPanel({ token, showToast }) {
     }
   };
 
+  const handleQuickAddSubject = async () => {
+    if (!selectedClass) return;
+    const name = window.prompt("Enter new subject name:");
+    if (!name || !name.trim()) return;
+    try {
+      const res = await api(token).post('/api/admin/subjects', { name, classId: selectedClass });
+      setSubjects([...subjects, res.data]);
+      setSelectedSubject(res.data._id);
+      showToast('Subject created!');
+    } catch {
+      showToast('Failed to create subject', 'error');
+    }
+  };
+
+  const handleQuickAddChapter = async () => {
+    if (!selectedSubject) return;
+    const title = window.prompt("Enter new chapter title:");
+    if (!title || !title.trim()) return;
+    try {
+      const res = await api(token).post('/api/admin/chapters', { 
+        title, 
+        subjectId: selectedSubject,
+        order: chapters.length + 1
+      });
+      setChapters([...chapters, res.data]);
+      setSelectedChapter(res.data._id);
+      showToast('Chapter created!');
+    } catch {
+      showToast('Failed to create chapter', 'error');
+    }
+  };
+
   return (
     <>
       <div className="admin-panel-header">
@@ -1012,26 +1092,42 @@ function QAPanel({ token, showToast }) {
       </div>
 
       <div className="admin-filter-bar" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <select className="filter-select" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSubject(''); setSelectedChapter(''); }}>
-          <option value="">Select a Class...</option>
-          {classes.map(c => (
-            <option key={c._id} value={c._id}>{c.name}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <select className="filter-select" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSubject(''); setSelectedChapter(''); }}>
+            <option value="">Select a Class...</option>
+            {classes.map(c => (
+              <option key={c._id} value={c._id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
 
-        <select className="filter-select" value={selectedSubject} onChange={e => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} disabled={!selectedClass}>
-          <option value="">Select a Subject...</option>
-          {subjects.map(s => (
-            <option key={s._id} value={s._id}>{s.name}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <select className="filter-select" value={selectedSubject} onChange={e => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} disabled={!selectedClass}>
+            <option value="">Select a Subject...</option>
+            {subjects.map(s => (
+              <option key={s._id} value={s._id}>{s.name}</option>
+            ))}
+          </select>
+          {selectedClass && (
+            <button className="btn-secondary" style={{ padding: '0.4rem 0.6rem', minWidth: 'auto' }} onClick={handleQuickAddSubject} title="Add Subject">
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
         
-        <select className="filter-select" value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)} disabled={!selectedSubject || loading}>
-          <option value="">Select a Chapter...</option>
-          {chapters.map(c => (
-            <option key={c._id} value={c._id}>{c.title}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <select className="filter-select" value={selectedChapter} onChange={e => setSelectedChapter(e.target.value)} disabled={!selectedSubject || loading}>
+            <option value="">Select a Chapter...</option>
+            {chapters.map(c => (
+              <option key={c._id} value={c._id}>{c.title}</option>
+            ))}
+          </select>
+          {selectedSubject && (
+            <button className="btn-secondary" style={{ padding: '0.4rem 0.6rem', minWidth: 'auto' }} onClick={handleQuickAddChapter} title="Add Chapter">
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && <div className="loading-container"><div className="loading-spinner" /></div>}

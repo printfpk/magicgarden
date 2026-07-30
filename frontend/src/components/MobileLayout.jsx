@@ -6,6 +6,8 @@ import '../mobile-home.css';
 
 export default function MobileLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [alarmsOpen, setAlarmsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const location = useLocation();
   
   const isActive = (path) => location.pathname === path;
@@ -14,17 +16,67 @@ export default function MobileLayout() {
     <div className="mobile-home-container">
       {/* TOP BAR */}
       <header className="mobile-header" style={{ position: 'relative' }}>
-        <button className="icon-btn" style={{ color: '#FF7E67' }} onClick={() => setMenuOpen(!menuOpen)}>
+        <button className="icon-btn" style={{ color: '#FF7E67' }} onClick={() => { setMenuOpen(!menuOpen); setAlarmsOpen(false); setNotificationsOpen(false); }}>
           {menuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
-        <div className="header-right-icons">
-          <button className="icon-btn text-purple">
+        <div className="header-right-icons" style={{ display: 'flex', gap: '0.5rem', position: 'relative' }}>
+          <button className="icon-btn text-purple" onClick={() => { setAlarmsOpen(!alarmsOpen); setNotificationsOpen(false); setMenuOpen(false); }}>
             <AlarmClock size={24} />
           </button>
-          <button className="icon-btn text-purple relative">
+          <button className="icon-btn text-purple relative" onClick={() => { setNotificationsOpen(!notificationsOpen); setAlarmsOpen(false); setMenuOpen(false); }}>
             <Bell size={24} />
             <span className="notification-dot"></span>
           </button>
+
+          <AnimatePresence>
+            {alarmsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{
+                  position: 'absolute',
+                  top: '50px',
+                  right: '40px',
+                  backgroundColor: '#FFF',
+                  borderRadius: '12px',
+                  boxShadow: '4px 4px 0px rgba(0,0,0,1)',
+                  border: '1.5px solid #111',
+                  padding: '1.25rem',
+                  zIndex: 1000,
+                  minWidth: '220px'
+                }}
+              >
+                <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: '#111' }}>Alarms</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>No upcoming alarms.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {notificationsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{
+                  position: 'absolute',
+                  top: '50px',
+                  right: '0',
+                  backgroundColor: '#FFF',
+                  borderRadius: '12px',
+                  boxShadow: '4px 4px 0px rgba(0,0,0,1)',
+                  border: '1.5px solid #111',
+                  padding: '1.25rem',
+                  zIndex: 1000,
+                  minWidth: '220px'
+                }}
+              >
+                <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: '#111' }}>Notifications</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>You're all caught up!</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Dropdown Menu */}
