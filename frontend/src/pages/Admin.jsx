@@ -425,37 +425,15 @@ function SubjectsPanel({ token, showToast }) {
 
 const EMPTY_CHAPTER = {
   title: '', subjectId: '', order: 0,
-  summary: '', shortNotes: [''], pdfLink: '', youtubeLink: '',
-  questions: [{ question: '', answer: '' }],
+  pdfLink: '', youtubeLink: ''
 };
 
 function ChapterForm({ initial, subjects, onSubmit, onCancel }) {
   const [form, setForm] = useState(initial || EMPTY_CHAPTER);
 
-  // Short notes helpers
-  const updateNote = (i, val) => {
-    const notes = [...form.shortNotes];
-    notes[i] = val;
-    setForm({ ...form, shortNotes: notes });
-  };
-  const addNote = () => setForm({ ...form, shortNotes: [...form.shortNotes, ''] });
-  const removeNote = (i) => setForm({ ...form, shortNotes: form.shortNotes.filter((_, idx) => idx !== i) });
-
-  // Q&A helpers
-  const updateQA = (i, field, val) => {
-    const qs = [...form.questions];
-    qs[i] = { ...qs[i], [field]: val };
-    setForm({ ...form, questions: qs });
-  };
-  const addQA = () => setForm({ ...form, questions: [...form.questions, { question: '', answer: '' }] });
-  const removeQA = (i) => setForm({ ...form, questions: form.questions.filter((_, idx) => idx !== i) });
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Filter empty notes / Q&A
-    const cleanedNotes = form.shortNotes.filter(n => n.trim() !== '');
-    const cleanedQA = form.questions.filter(q => q.question.trim() !== '' && q.answer.trim() !== '');
-    onSubmit({ ...form, shortNotes: cleanedNotes, questions: cleanedQA });
+    onSubmit({ ...form });
   };
 
   return (
@@ -485,76 +463,7 @@ function ChapterForm({ initial, subjects, onSubmit, onCancel }) {
             </div>
           </div>
 
-          {/* Summary */}
-          <div className="form-group">
-            <label className="form-label">Summary</label>
-            <textarea
-              className="form-textarea"
-              style={{ minHeight: 160 }}
-              value={form.summary}
-              onChange={e => setForm({ ...form, summary: e.target.value })}
-              placeholder="Write a detailed chapter summary. Use blank lines to separate paragraphs."
-            />
-          </div>
 
-          {/* Short Notes */}
-          <div className="form-group">
-            <label className="form-label">Short Notes (Bullet Points)</label>
-            <div className="notes-builder">
-              {form.shortNotes.map((note, i) => (
-                <div key={i} className="note-input-row">
-                  <input
-                    value={note}
-                    onChange={e => updateNote(i, e.target.value)}
-                    placeholder={`Note ${i + 1}…`}
-                  />
-                  {form.shortNotes.length > 1 && (
-                    <button type="button" className="note-remove-btn" onClick={() => removeNote(i)}>
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" className="add-note-btn" onClick={addNote}>
-                <Plus size={14} /> Add Note
-              </button>
-            </div>
-          </div>
-
-          {/* Q&A */}
-          <div className="form-group">
-            <label className="form-label">Questions & Answers</label>
-            <div className="qa-builder">
-              {form.questions.map((qa, i) => (
-                <div key={i} className="qa-builder-item">
-                  <div className="qa-item-header">
-                    <span className="qa-item-label">Q{i + 1}</span>
-                    {form.questions.length > 1 && (
-                      <button type="button" className="note-remove-btn" onClick={() => removeQA(i)}>
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    className="form-input"
-                    value={qa.question}
-                    onChange={e => updateQA(i, 'question', e.target.value)}
-                    placeholder="Question…"
-                  />
-                  <textarea
-                    className="form-textarea"
-                    style={{ minHeight: 80 }}
-                    value={qa.answer}
-                    onChange={e => updateQA(i, 'answer', e.target.value)}
-                    placeholder="Answer…"
-                  />
-                </div>
-              ))}
-              <button type="button" className="add-note-btn" onClick={addQA}>
-                <Plus size={14} /> Add Question
-              </button>
-            </div>
-          </div>
 
           {/* Resources */}
           <div className="form-grid-2">
@@ -640,11 +549,8 @@ function ChaptersPanel({ token, showToast }) {
     title: ch.title,
     subjectId: ch.subjectId?._id || ch.subjectId,
     order: ch.order || 0,
-    summary: ch.summary || '',
-    shortNotes: ch.shortNotes?.length ? ch.shortNotes : [''],
     pdfLink: ch.pdfLink || '',
     youtubeLink: ch.youtubeLink || '',
-    questions: ch.questions?.length ? ch.questions : [{ question: '', answer: '' }],
   });
 
   return (

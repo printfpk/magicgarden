@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Class {
+  id        String    @id @default(uuid())
+  name      String
+  level     Int       @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  subjects  Subject[]
+}
+
+model Subject {
+  id         String   @id @default(uuid())
+  name       String
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  coverImage String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  chapters   Chapter[]
+}
+
+model Chapter {
+  id          String   @id @default(uuid())
+  title       String
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  order       Int      @default(0)
+  summary     String   @default("")
+  shortNotes  String[] @default([])
+  pdfLink     String   @default("")
+  youtubeLink String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  questions   Question[]
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  chapterId String
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}

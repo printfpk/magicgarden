@@ -1,15 +1,33 @@
 import express from 'express';
-import Class from '../models/Class.js';
-import Subject from '../models/Subject.js';
-import Chapter from '../models/Chapter.js';
+import prisma from '../utils/prisma.js';
 
 const router = express.Router();
+
+const mapId = (obj) => {
+  if (Array.isArray(obj)) return obj.map(mapId);
+  if (obj && typeof obj === 'object') {
+    const newObj = { ...obj, _id: obj.id };
+    if (newObj.subject) {
+      newObj.subjectId = mapId(newObj.subject);
+      delete newObj.subject;
+    }
+    if (newObj.class) {
+      newObj.classId = mapId(newObj.class);
+      delete newObj.class;
+    }
+    if (newObj.questions) {
+      newObj.questions = mapId(newObj.questions);
+    }
+    return newObj;
+  }
+  return obj;
+};
 
 // Get all classes
 router.get('/classes', async (req, res) => {
   try {
-    const classes = await Class.find().sort({ level: 1 });
-    res.json(classes);
+    const classes = await prisma.class.findMany({ orderBy: { level: 'asc' } });
+    res.json(mapId(classes));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -18,8 +36,11 @@ router.get('/classes', async (req, res) => {
 // Get subjects by class id
 router.get('/classes/:classId/subjects', async (req, res) => {
   try {
-    const subjects = await Subject.find({ classId: req.params.classId }).sort({ name: 1 });
-    res.json(subjects);
+    const subjects = await prisma.subject.findMany({
+      where: { classId: req.params.classId },
+      orderBy: { name: 'asc' }
+    });
+    res.json(mapId(subjects));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -28,10 +49,18 @@ router.get('/classes/:classId/subjects', async (req, res) => {
 // Get chapters by subject id
 router.get('/subjects/:subjectId/chapters', async (req, res) => {
   try {
-    const chapters = await Chapter.find({ subjectId: req.params.subjectId })
-      .sort({ order: 1, createdAt: 1 })
-      .select('title order summary createdAt');
-    res.json(chapters);
+    const chapters = await prisma.chapter.findMany({
+      where: { subjectId: req.params.subjectId },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        title: true,
+        order: true,
+        summary: true,
+        createdAt: true
+      }
+    });
+    res.json(mapId(chapters));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -40,9 +69,17 @@ router.get('/subjects/:subjectId/chapters', async (req, res) => {
 // Get chapter details
 router.get('/chapters/:id', async (req, res) => {
   try {
-    const chapter = await Chapter.findById(req.params.id).populate('subjectId', 'name classId');
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: req.params.id },
+      include: {
+        subject: {
+          include: { class: true }
+        },
+        questions: true
+      }
+    });
     if (!chapter) return res.status(404).json({ message: 'Chapter not found' });
-    res.json(chapter);
+    res.json(mapId(chapter));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
