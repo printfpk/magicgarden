@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 
 const TABS = [
-  { id: 'summary', label: 'Summary', icon: BookOpen },
   { id: 'notes', label: 'Short Notes', icon: StickyNote },
   { id: 'qa', label: 'Q & A', icon: HelpCircle },
   { id: 'resources', label: 'Resources', icon: ExternalLink },
@@ -45,7 +44,7 @@ export default function ChapterDetail() {
   const { chapterId } = useParams();
   const [chapter, setChapter] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('summary');
+  const [activeTab, setActiveTab] = useState('notes');
 
   useEffect(() => {
     axios.get(`/api/chapters/${chapterId}`)
@@ -53,6 +52,17 @@ export default function ChapterDetail() {
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, [chapterId]);
+
+  useEffect(() => {
+    if (chapter) {
+      const hasNotes = chapter.shortNotes && chapter.shortNotes.length > 0;
+      const hasQA = chapter.questions && chapter.questions.length > 0;
+      const hasResources = chapter.pdfLink || chapter.youtubeLink;
+      if (hasNotes) setActiveTab('notes');
+      else if (hasQA) setActiveTab('qa');
+      else if (hasResources) setActiveTab('resources');
+    }
+  }, [chapter]);
 
   if (loading) {
     return (
@@ -84,8 +94,10 @@ export default function ChapterDetail() {
     return true;
   });
 
+
+
   return (
-    <div className="page-container" style={{ paddingTop: '8rem' }}>
+    <div className="page-container" style={{ padding: '2rem 1rem' }}>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -137,32 +149,7 @@ export default function ChapterDetail() {
 
           {/* Tab Panels */}
           <AnimatePresence mode="wait">
-            {activeTab === 'summary' && (
-              <motion.div
-                key="summary"
-                className="tab-panel"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-              >
-                {chapter.summary ? (
-                  <div className="summary-content">
-                    {chapter.summary.split('\n\n').map((para, i) => (
-                      <p key={i} style={{ marginBottom: i < chapter.summary.split('\n\n').length - 1 ? '1.25rem' : 0 }}>
-                        {para}
-                      </p>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <p style={{ color: 'var(--text-faint)', fontStyle: 'italic' }}>
-                      No summary has been written for this chapter yet.
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-            )}
+
 
             {activeTab === 'notes' && (
               <motion.div

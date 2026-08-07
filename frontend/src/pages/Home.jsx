@@ -6,17 +6,17 @@ import { Link } from 'react-router-dom';
 import '../mobile-home.css';
 
 const SUBJECT_COLORS = [
-  { bg: '#F2C7C7', text: '#333', icon: '📐' }, // Soft Pink
-  { bg: '#FFFFFF', text: '#333', icon: '🧪' }, // White
-  { bg: '#D5F3D8', text: '#333', icon: '⚛️' }, // Pale Green
-  { bg: '#FFB7C5', text: '#333', icon: '🧬' }, // Light Pink
+  { bg: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)', text: '#333', icon: '📐' },
+  { bg: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)', text: '#333', icon: '🧪' },
+  { bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', text: '#333', icon: '⚛️' },
+  { bg: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', text: '#333', icon: '🧬' },
 ];
 
 const CLASS_COLORS = [
-  { bg: '#E35336', text: '#FFF' },
-  { bg: '#F5F5DC', text: '#333' }, // Dark text for readability on light beige
-  { bg: '#F4A460', text: '#FFF' },
-  { bg: '#A0522D', text: '#FFF' }
+  { bg: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)', text: '#FFF' },
+  { bg: 'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', text: '#FFF' },
+  { bg: 'linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)', text: '#FFF' },
+  { bg: 'linear-gradient(135deg, #FA709A 0%, #FEE140 100%)', text: '#FFF' }
 ];
 
 export default function Home() {
@@ -91,7 +91,15 @@ export default function Home() {
           <h2 className="section-title">All Classes</h2>
           <div className="subjects-scroll-row">
             {loading ? (
-              <div style={{ padding: '1rem', color: '#999' }}>Loading classes...</div>
+              [1, 2, 3, 4].map(n => (
+                <div key={`cls-skel-${n}`} className="skeleton-card">
+                  <div className="skeleton-icon"></div>
+                  <div>
+                    <div className="skeleton-text" style={{ marginBottom: '6px' }}></div>
+                    <div className="skeleton-text short"></div>
+                  </div>
+                </div>
+              ))
             ) : classes.length > 0 ? (
               classes.map((cls, idx) => {
                 const isActive = activeClass?._id === cls._id;
@@ -101,11 +109,8 @@ export default function Home() {
                     key={cls._id} 
                     className={`subject-card ${isActive ? 'active' : ''}`}
                     style={{ 
-                      backgroundColor: style.bg, 
-                      color: style.text,
-                      opacity: isActive ? 1 : 0.65,
-                      transform: isActive ? 'scale(1.02)' : 'scale(1)',
-                      transition: 'all 0.2s ease-in-out'
+                      background: style.bg, 
+                      color: style.text
                     }}
                     onClick={() => handleClassClick(cls)}
                   >
@@ -127,7 +132,12 @@ export default function Home() {
           
           <div className="subjects-scroll-row">
             {loading ? (
-              <div style={{ padding: '1rem', color: '#999' }}>Loading subjects...</div>
+              [1, 2, 3, 4].map(n => (
+                <div key={`sub-skel-${n}`} className="skeleton-card" style={{ alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                  <div className="skeleton-icon" style={{ width: '40px', height: '40px' }}></div>
+                  <div className="skeleton-text" style={{ width: '80%' }}></div>
+                </div>
+              ))
             ) : subjects.length > 0 ? (
               subjects.map((sub, idx) => {
                 const style = SUBJECT_COLORS[idx % SUBJECT_COLORS.length];
@@ -137,11 +147,8 @@ export default function Home() {
                     key={sub._id} 
                     className={`subject-card ${isActive ? 'active' : ''}`}
                     style={{ 
-                      backgroundColor: style.bg,
+                      background: style.bg,
                       color: '#111',
-                      opacity: isActive ? 1 : 0.65,
-                      transform: isActive ? 'scale(1.02)' : 'scale(1)',
-                      transition: 'all 0.2s ease-in-out',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'center',
@@ -167,7 +174,15 @@ export default function Home() {
         {/* CHAPTERS */}
         <section className="chapters-section">
           {loading ? (
-            <div style={{ padding: '1rem', color: '#999' }}>Loading chapters...</div>
+            <div className="chapters-list">
+              {[1, 2, 3, 4].map(n => (
+                <div key={`chap-skel-${n}`} className="skeleton-chapter">
+                  <div className="skeleton-text short" style={{ height: '16px', marginBottom: '8px' }}></div>
+                  <div className="skeleton-text"></div>
+                  <div className="skeleton-text" style={{ width: '80%' }}></div>
+                </div>
+              ))}
+            </div>
           ) : chapters.length > 0 ? (
             <div className="chapters-list">
               {chapters.map((chap, idx) => (

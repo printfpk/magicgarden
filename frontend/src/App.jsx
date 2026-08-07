@@ -36,8 +36,8 @@ function App() {
             <Route path="/bookmarks" element={<Bookmarks />} />
             <Route path="/download" element={<Download />} />
             <Route path="/live" element={<Live />} />
+            <Route path="/chapters/:chapterId" element={<ChapterDetail />} />
           </Route>
-          <Route path="/chapters/:chapterId" element={<ChapterDetail />} />
           <Route path="/admin/*" element={<Admin />} />
         </Routes>
       </AnimatePresence>

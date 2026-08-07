@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
 import prisma from './utils/prisma.js';
 import dotenv from 'dotenv';
-import Class from './models/Class.js';
-import Subject from './models/Subject.js';
-import Chapter from './models/Chapter.js';
+const classSchema = new mongoose.Schema({}, { strict: false, collection: 'classes' });
+const subjectSchema = new mongoose.Schema({}, { strict: false, collection: 'subjects' });
+const chapterSchema = new mongoose.Schema({}, { strict: false, collection: 'chapters' });
+
+const Class = mongoose.model('Class', classSchema);
+const Subject = mongoose.model('Subject', subjectSchema);
+const Chapter = mongoose.model('Chapter', chapterSchema);
 
 dotenv.config();
 
