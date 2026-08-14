@@ -3,6 +3,21 @@ import prisma from '../utils/prisma.js';
 
 const router = express.Router();
 
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCached = (key) => {
+  const item = cache.get(key);
+  if (item && Date.now() - item.timestamp < CACHE_TTL) {
+    return item.data;
+  }
+  return null;
+};
+
+const setCache = (key, data) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
+
 const mapId = (obj) => {
   if (Array.isArray(obj)) return obj.map(mapId);
   if (obj && typeof obj === 'object') {
@@ -23,11 +38,62 @@ const mapId = (obj) => {
   return obj;
 };
 
+// Get initial data for home page (classes, subjects for first class, chapters for first subject)
+router.get('/initial-data', async (req, res) => {
+  try {
+    const cacheKey = 'initial-data';
+    const cachedData = getCached(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
+    const classes = await prisma.class.findMany({ orderBy: { level: 'asc' } });
+    let subjects = [];
+    let chapters = [];
+    
+    if (classes.length > 0) {
+      subjects = await prisma.subject.findMany({
+        where: { classId: classes[0].id },
+        orderBy: { name: 'asc' }
+      });
+      
+      if (subjects.length > 0) {
+        chapters = await prisma.chapter.findMany({
+          where: { subjectId: subjects[0].id },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          select: {
+            id: true,
+            title: true,
+            order: true,
+            summary: true,
+            createdAt: true
+          }
+        });
+      }
+    }
+    
+    const responseData = {
+      classes: mapId(classes),
+      subjects: mapId(subjects),
+      chapters: mapId(chapters)
+    };
+    
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get all classes
 router.get('/classes', async (req, res) => {
   try {
+    const cacheKey = 'classes';
+    const cachedData = getCached(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
     const classes = await prisma.class.findMany({ orderBy: { level: 'asc' } });
-    res.json(mapId(classes));
+    const responseData = mapId(classes);
+    setCache(cacheKey, responseData);
+    res.json(responseData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -36,11 +102,17 @@ router.get('/classes', async (req, res) => {
 // Get subjects by class id
 router.get('/classes/:classId/subjects', async (req, res) => {
   try {
+    const cacheKey = `subjects-${req.params.classId}`;
+    const cachedData = getCached(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
     const subjects = await prisma.subject.findMany({
       where: { classId: req.params.classId },
       orderBy: { name: 'asc' }
     });
-    res.json(mapId(subjects));
+    const responseData = mapId(subjects);
+    setCache(cacheKey, responseData);
+    res.json(responseData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -49,6 +121,10 @@ router.get('/classes/:classId/subjects', async (req, res) => {
 // Get chapters by subject id
 router.get('/subjects/:subjectId/chapters', async (req, res) => {
   try {
+    const cacheKey = `chapters-${req.params.subjectId}`;
+    const cachedData = getCached(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
     const chapters = await prisma.chapter.findMany({
       where: { subjectId: req.params.subjectId },
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
@@ -60,7 +136,9 @@ router.get('/subjects/:subjectId/chapters', async (req, res) => {
         createdAt: true
       }
     });
-    res.json(mapId(chapters));
+    const responseData = mapId(chapters);
+    setCache(cacheKey, responseData);
+    res.json(responseData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -69,6 +147,10 @@ router.get('/subjects/:subjectId/chapters', async (req, res) => {
 // Get chapter details
 router.get('/chapters/:id', async (req, res) => {
   try {
+    const cacheKey = `chapter-${req.params.id}`;
+    const cachedData = getCached(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
     const chapter = await prisma.chapter.findUnique({
       where: { id: req.params.id },
       include: {
@@ -79,7 +161,9 @@ router.get('/chapters/:id', async (req, res) => {
       }
     });
     if (!chapter) return res.status(404).json({ message: 'Chapter not found' });
-    res.json(mapId(chapter));
+    const responseData = mapId(chapter);
+    setCache(cacheKey, responseData);
+    res.json(responseData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
