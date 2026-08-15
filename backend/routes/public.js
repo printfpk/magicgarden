@@ -169,4 +169,23 @@ router.get('/chapters/:id', async (req, res) => {
   }
 });
 
+// Get all active store items
+router.get('/store-items', async (req, res) => {
+  try {
+    const cacheKey = 'store-items';
+    const cachedData = getCached(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
+    const storeItems = await prisma.storeItem.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    const responseData = mapId(storeItems);
+    setCache(cacheKey, responseData);
+    res.json(responseData);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

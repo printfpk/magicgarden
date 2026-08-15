@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Bell, AlarmClock, Bookmark, Home as HomeIcon, PlaySquare, FolderDown, FileText } from 'lucide-react';
+import { Menu, X, Bell, AlarmClock, Bookmark, Home as HomeIcon, PlaySquare, FolderDown, FileText, ShoppingCart } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import '../mobile-home.css';
 
@@ -15,7 +15,7 @@ export default function MobileLayout() {
   return (
     <div className="mobile-home-container">
       {/* TOP BAR */}
-      <header className="mobile-header" style={{ position: 'relative' }}>
+      <header className="mobile-header" style={{ position: 'sticky', top: 0, zIndex: 900 }}>
         <button className="icon-btn" style={{ color: '#FF7E67' }} onClick={() => { setMenuOpen(!menuOpen); setAlarmsOpen(false); setNotificationsOpen(false); }}>
           {menuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
@@ -142,8 +142,8 @@ export default function MobileLayout() {
         </div>
 
         <Link to="/download" className="nav-item" style={{ color: isActive('/download') ? '#A855F7' : 'inherit', textDecoration: 'none' }}>
-          <FolderDown size={20} />
-          <span>Download</span>
+          <ShoppingCart size={20} />
+          <span>Buy</span>
         </Link>
         <Link to="/live" className="nav-item" style={{ color: isActive('/live') ? '#A855F7' : 'inherit', textDecoration: 'none' }}>
           <PlaySquare size={20} />

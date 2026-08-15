@@ -224,6 +224,58 @@ router.delete('/chapters/:id', async (req, res) => {
   }
 });
 
+// ─── STORE ITEMS ─────────────────────────────────────────────────────────────
+router.get('/store-items', async (req, res) => {
+  try {
+    const storeItems = await prisma.storeItem.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(mapId(storeItems));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/store-items', async (req, res) => {
+  try {
+    const data = { ...req.body };
+    if (data._id) delete data._id;
+    if (data.price) data.price = Number(data.price);
+    if (data.isActive !== undefined) data.isActive = data.isActive === true || data.isActive === 'true';
+
+    const newStoreItem = await prisma.storeItem.create({ data });
+    res.status(201).json(mapId(newStoreItem));
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/store-items/:id', async (req, res) => {
+  try {
+    const data = { ...req.body };
+    if (data._id) delete data._id;
+    if (data.price) data.price = Number(data.price);
+    if (data.isActive !== undefined) data.isActive = data.isActive === true || data.isActive === 'true';
+
+    const updated = await prisma.storeItem.update({
+      where: { id: req.params.id },
+      data
+    });
+    res.json(mapId(updated));
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/store-items/:id', async (req, res) => {
+  try {
+    await prisma.storeItem.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Store item deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ─── IMAGE UPLOAD ────────────────────────────────────────────────────────
 router.post('/upload-image', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No image provided' });

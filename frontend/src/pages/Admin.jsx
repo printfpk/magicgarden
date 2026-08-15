@@ -7,7 +7,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 import axios from 'axios';
 import { LayoutDashboard, BookOpen, Library, Layers, LogOut,
   Plus, Pencil, Trash2, X, ChevronDown, Check, AlertCircle,
-  GraduationCap, Menu, FileText, HelpCircle, Maximize2, Minimize2, ArrowLeft
+  GraduationCap, Menu, FileText, HelpCircle, Maximize2, Minimize2, ArrowLeft, ShoppingCart
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -1220,6 +1220,212 @@ function Dashboard({ token }) {
   );
 }
 
+// ─── Store Panel ─────────────────────────────────────────────────────────────
+function StorePanel({ token, showToast }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    title: '', description: '', price: '', category: '',
+    image: '', qrCodeImage: '', isActive: true
+  });
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const res = await api(token).get('/api/admin/store-items');
+      setItems(res.data);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to fetch store items', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchItems(); }, [token]);
+
+  const handleOpenForm = (item = null) => {
+    if (item) {
+      setEditingItem(item);
+      setFormData({
+        title: item.title, description: item.description, price: item.price,
+        category: item.category, image: item.image || '', qrCodeImage: item.qrCodeImage || '',
+        isActive: item.isActive
+      });
+    } else {
+      setEditingItem(null);
+      setFormData({ title: '', description: '', price: '', category: '', image: '', qrCodeImage: '', isActive: true });
+    }
+    setFormOpen(true);
+  };
+
+  const handleImageUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+    
+    try {
+      showToast(`Uploading ${field === 'image' ? 'cover' : 'QR code'}...`, 'info');
+      const res = await api(token).post('/api/admin/upload-image', uploadData);
+      setFormData(prev => ({ ...prev, [field]: res.data.url }));
+      showToast('Image uploaded successfully', 'success');
+    } catch (err) {
+      showToast('Image upload failed', 'error');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingItem) {
+        await api(token).put(`/api/admin/store-items/${editingItem._id}`, formData);
+        showToast('Store item updated successfully', 'success');
+      } else {
+        await api(token).post('/api/admin/store-items', formData);
+        showToast('Store item created successfully', 'success');
+      }
+      setFormOpen(false);
+      fetchItems();
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to save store item', 'error');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this store item?')) return;
+    try {
+      await api(token).delete(`/api/admin/store-items/${id}`);
+      showToast('Store item deleted successfully', 'success');
+      fetchItems();
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to delete store item', 'error');
+    }
+  };
+
+  if (loading) return <div className="admin-loading"><div className="spinner"></div></div>;
+
+  return (
+    <div className="panel-container">
+      <div className="panel-header">
+        <div>
+          <h2>Store Items</h2>
+          <p className="panel-subtitle">Manage resources available in the Buy tab</p>
+        </div>
+        <button className="btn-primary" onClick={() => handleOpenForm()}>
+          <Plus size={16} /> Add Item
+        </button>
+      </div>
+
+      <div className="data-grid">
+        {items.map(item => (
+          <div key={item._id} className="data-card">
+            <div className="card-content" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+              {item.image ? (
+                <img src={item.image} alt={item.title} style={{ width: '60px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />
+              ) : (
+                <div style={{ width: '60px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShoppingCart size={24} color="#ccc" />
+                </div>
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.25rem' }}>{item.title}</h3>
+                  <span style={{ fontWeight: 'bold', color: 'var(--accent-primary)' }}>₹{item.price}</span>
+                </div>
+                <span className="badge" style={{ marginBottom: '0.5rem' }}>{item.category}</span>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {item.description}
+                </p>
+                <div style={{ fontSize: '0.75rem', color: item.isActive ? '#10b981' : '#ef4444' }}>
+                  {item.isActive ? 'Active (Visible)' : 'Inactive (Hidden)'}
+                </div>
+              </div>
+            </div>
+            <div className="card-actions">
+              <button className="action-btn edit" onClick={() => handleOpenForm(item)}><Pencil size={14} /> Edit</button>
+              <button className="action-btn delete" onClick={() => handleDelete(item._id)}><Trash2 size={14} /> Delete</button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <div className="empty-state">No store items found.</div>}
+      </div>
+
+      <AnimatePresence>
+        {formOpen && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="modal-content" style={{ maxWidth: '600px' }} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}>
+              <div className="modal-header">
+                <h3>{editingItem ? 'Edit Store Item' : 'New Store Item'}</h3>
+                <button className="close-btn" onClick={() => setFormOpen(false)}><X size={20} /></button>
+              </div>
+              <form onSubmit={handleSubmit} className="modal-body form-grid">
+                <div className="form-group">
+                  <label>Title</label>
+                  <input type="text" className="form-input" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
+                </div>
+                
+                <div className="form-group">
+                  <label>Category (e.g., Class 10)</label>
+                  <input type="text" className="form-input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} required />
+                </div>
+                
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Description</label>
+                  <textarea className="form-input" rows="3" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} required></textarea>
+                </div>
+
+                <div className="form-group">
+                  <label>Price (₹)</label>
+                  <input type="number" className="form-input" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} required min="0" />
+                </div>
+                
+                <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0 }}>
+                    <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({ ...formData, isActive: e.target.checked })} style={{ width: '1.2rem', height: '1.2rem' }} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Active (Visible to users)</span>
+                  </label>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-delicate)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                  <label>Cover Image (Thumbnail)</label>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    {formData.image && <img src={formData.image} alt="Cover" style={{ width: '60px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />}
+                    <div style={{ flex: 1 }}>
+                      <input type="file" className="form-input" onChange={(e) => handleImageUpload(e, 'image')} accept="image/*" />
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', margin: '0.5rem 0 0' }}>Or enter URL:</p>
+                      <input type="text" className="form-input" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." style={{ marginTop: '0.25rem' }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-delicate)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                  <label>Custom QR Code Image (Payment)</label>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    {formData.qrCodeImage && <img src={formData.qrCodeImage} alt="QR Code" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />}
+                    <div style={{ flex: 1 }}>
+                      <input type="file" className="form-input" onChange={(e) => handleImageUpload(e, 'qrCodeImage')} accept="image/*" />
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-faint)', margin: '0.5rem 0 0' }}>Or enter URL:</p>
+                      <input type="text" className="form-input" value={formData.qrCodeImage} onChange={e => setFormData({ ...formData, qrCodeImage: e.target.value })} placeholder="https://..." style={{ marginTop: '0.25rem' }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer" style={{ gridColumn: '1 / -1' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setFormOpen(false)}>Cancel</button>
+                  <button type="submit" className="btn-primary">{editingItem ? 'Save Changes' : 'Create Item'}</button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  MAIN ADMIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1319,7 +1525,8 @@ export default function Admin() {
     );
   }
 
-  // ── Admin Dashboard ──────────────────────────────────────────────────────────
+
+// ── Admin Dashboard ──────────────────────────────────────────────────────────
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'classes', label: 'Classes', icon: GraduationCap },
@@ -1327,6 +1534,7 @@ export default function Admin() {
     { id: 'chapters', label: 'Chapters', icon: Layers },
     { id: 'notes', label: 'Notes', icon: FileText },
     { id: 'qa', label: 'Q&A', icon: HelpCircle },
+    { id: 'store', label: 'Store', icon: ShoppingCart },
   ];
 
   const renderPanel = () => {
@@ -1336,6 +1544,7 @@ export default function Admin() {
       case 'chapters':  return <ChaptersPanel token={token} showToast={showToast} />;
       case 'notes':     return <NotesPanel token={token} showToast={showToast} />;
       case 'qa':        return <QAPanel token={token} showToast={showToast} />;
+      case 'store':     return <StorePanel token={token} showToast={showToast} />;
       default:          return <Dashboard token={token} />;
     }
   };
