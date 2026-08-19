@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ShoppingCart, Upload, X, CreditCard, Info, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Upload, X, CreditCard, Info, CheckCircle, Send } from 'lucide-react';
 import './Download.css';
 
 export default function Download() {
@@ -87,6 +87,14 @@ export default function Download() {
                   >
                     <ShoppingCart size={16} /> Buy Now
                   </button>
+                  <a
+                    href="https://t.me/YOUR_USERNAME"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="telegram-btn"
+                  >
+                    <Send size={16} />
+                  </a>
                 </div>
               </div>
             </div>

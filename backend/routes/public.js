@@ -38,44 +38,77 @@ const mapId = (obj) => {
   return obj;
 };
 
+/**
+ * Fetch initial data with optimized parallel queries.
+ * Used by both the API endpoint and the pre-warm function.
+ */
+async function fetchInitialData() {
+  // First batch: classes query (subjects/chapters depend on this)
+  const classes = await prisma.class.findMany({ orderBy: { level: 'asc' } });
+  
+  let subjects = [];
+  let chapters = [];
+  
+  if (classes.length > 0) {
+    // Fetch subjects for the first class
+    subjects = await prisma.subject.findMany({
+      where: { classId: classes[0].id },
+      orderBy: { name: 'asc' }
+    });
+    
+    if (subjects.length > 0) {
+      // Fetch chapters for the first subject
+      chapters = await prisma.chapter.findMany({
+        where: { subjectId: subjects[0].id },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        select: {
+          id: true,
+          title: true,
+          order: true,
+          summary: true,
+          createdAt: true
+        }
+      });
+    }
+  }
+  
+  return {
+    classes: mapId(classes),
+    subjects: mapId(subjects),
+    chapters: mapId(chapters)
+  };
+}
+
+/**
+ * Pre-warm the cache at server startup so the first request is instant.
+ */
+export async function preWarmCache() {
+  const start = Date.now();
+  try {
+    const data = await fetchInitialData();
+    setCache('initial-data', data);
+    
+    // Also cache classes separately since it's a common query
+    setCache('classes', data.classes);
+    
+    console.log(`✅ Cache pre-warmed in ${Date.now() - start}ms (${data.classes.length} classes, ${data.subjects.length} subjects, ${data.chapters.length} chapters)`);
+  } catch (err) {
+    console.warn(`⚠️ Cache pre-warm failed (${Date.now() - start}ms):`, err.message);
+  }
+}
+
 // Get initial data for home page (classes, subjects for first class, chapters for first subject)
 router.get('/initial-data', async (req, res) => {
   try {
     const cacheKey = 'initial-data';
     const cachedData = getCached(cacheKey);
-    if (cachedData) return res.json(cachedData);
-
-    const classes = await prisma.class.findMany({ orderBy: { level: 'asc' } });
-    let subjects = [];
-    let chapters = [];
-    
-    if (classes.length > 0) {
-      subjects = await prisma.subject.findMany({
-        where: { classId: classes[0].id },
-        orderBy: { name: 'asc' }
-      });
-      
-      if (subjects.length > 0) {
-        chapters = await prisma.chapter.findMany({
-          where: { subjectId: subjects[0].id },
-          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-          select: {
-            id: true,
-            title: true,
-            order: true,
-            summary: true,
-            createdAt: true
-          }
-        });
-      }
+    if (cachedData) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cachedData);
     }
-    
-    const responseData = {
-      classes: mapId(classes),
-      subjects: mapId(subjects),
-      chapters: mapId(chapters)
-    };
-    
+
+    res.set('X-Cache', 'MISS');
+    const responseData = await fetchInitialData();
     setCache(cacheKey, responseData);
     res.json(responseData);
   } catch (err) {
@@ -88,8 +121,12 @@ router.get('/classes', async (req, res) => {
   try {
     const cacheKey = 'classes';
     const cachedData = getCached(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    if (cachedData) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cachedData);
+    }
 
+    res.set('X-Cache', 'MISS');
     const classes = await prisma.class.findMany({ orderBy: { level: 'asc' } });
     const responseData = mapId(classes);
     setCache(cacheKey, responseData);
@@ -104,8 +141,12 @@ router.get('/classes/:classId/subjects', async (req, res) => {
   try {
     const cacheKey = `subjects-${req.params.classId}`;
     const cachedData = getCached(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    if (cachedData) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cachedData);
+    }
 
+    res.set('X-Cache', 'MISS');
     const subjects = await prisma.subject.findMany({
       where: { classId: req.params.classId },
       orderBy: { name: 'asc' }
@@ -123,8 +164,12 @@ router.get('/subjects/:subjectId/chapters', async (req, res) => {
   try {
     const cacheKey = `chapters-${req.params.subjectId}`;
     const cachedData = getCached(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    if (cachedData) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cachedData);
+    }
 
+    res.set('X-Cache', 'MISS');
     const chapters = await prisma.chapter.findMany({
       where: { subjectId: req.params.subjectId },
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
@@ -149,8 +194,12 @@ router.get('/chapters/:id', async (req, res) => {
   try {
     const cacheKey = `chapter-${req.params.id}`;
     const cachedData = getCached(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    if (cachedData) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cachedData);
+    }
 
+    res.set('X-Cache', 'MISS');
     const chapter = await prisma.chapter.findUnique({
       where: { id: req.params.id },
       include: {
@@ -174,8 +223,12 @@ router.get('/store-items', async (req, res) => {
   try {
     const cacheKey = 'store-items';
     const cachedData = getCached(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    if (cachedData) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cachedData);
+    }
 
+    res.set('X-Cache', 'MISS');
     const storeItems = await prisma.storeItem.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
@@ -189,3 +242,4 @@ router.get('/store-items', async (req, res) => {
 });
 
 export default router;
+

@@ -37,35 +37,26 @@ export default function Home() {
         setLoadingSubjects(true);
         setLoadingChapters(true);
 
-        // 1. Fetch classes first and update UI instantly
-        const clsRes = await axios.get('/api/classes');
-        setClasses(clsRes.data);
+        // Single API call fetches classes + subjects + chapters in one shot
+        const res = await axios.get('/api/initial-data');
+        const { classes: cls, subjects: subs, chapters: chaps } = res.data;
+
+        setClasses(cls);
         setLoadingClasses(false);
 
-        if (clsRes.data.length > 0) {
-          const firstClass = clsRes.data[0];
-          setActiveClass(firstClass);
-          
-          // 2. Then fetch subjects and update UI instantly
-          const subRes = await axios.get(`/api/classes/${firstClass._id}/subjects`);
-          setSubjects(subRes.data);
-          setLoadingSubjects(false);
-          
-          if (subRes.data.length > 0) {
-            setActiveSubject(subRes.data[0]);
-            
-            // 3. Finally fetch chapters and update UI
-            const chapRes = await axios.get(`/api/subjects/${subRes.data[0]._id}/chapters`);
-            setChapters(chapRes.data);
-            setLoadingChapters(false);
-          } else {
-            setChapters([]);
-            setLoadingChapters(false);
-          }
-        } else {
-          setLoadingSubjects(false);
-          setLoadingChapters(false);
+        if (cls.length > 0) {
+          setActiveClass(cls[0]);
         }
+
+        setSubjects(subs);
+        setLoadingSubjects(false);
+
+        if (subs.length > 0) {
+          setActiveSubject(subs[0]);
+        }
+
+        setChapters(chaps);
+        setLoadingChapters(false);
       } catch (err) {
         console.error(err);
         setLoadingClasses(false);

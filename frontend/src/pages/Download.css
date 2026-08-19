@@ -114,6 +114,25 @@
   background: var(--accent-emerald);
 }
 
+.telegram-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #0088cc;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.telegram-btn:hover {
+  background: #006da3;
+  transform: scale(1.1);
+}
+
 /* Modal Styles */
 .payment-modal-overlay {
   position: fixed;
